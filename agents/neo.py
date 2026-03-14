@@ -27,18 +27,18 @@ logger = get_agent_logger("Neo")
 META_COMMANDS = {"/status", "/agents", "/health", "/help", "/quit", "/exit"}
 
 
-def build_registry(llm_client: BedrockClient) -> AgentRegistry:
+def build_registry(llm_client: BedrockClient, brain=None) -> AgentRegistry:
     registry = AgentRegistry()
     agents = [
-        Trinity(llm_client=llm_client),
-        Morpheus(llm_client=llm_client),
-        Oracle(llm_client=llm_client),
-        Keymaker(llm_client=llm_client),
-        Tank(llm_client=llm_client),
-        Niobe(llm_client=llm_client),
-        Mouse(llm_client=llm_client),
-        Smith(llm_client=llm_client),
-        Architect(llm_client=llm_client),
+        Trinity(llm_client=llm_client, brain=brain),
+        Morpheus(llm_client=llm_client, brain=brain),
+        Oracle(llm_client=llm_client, brain=brain),
+        Keymaker(llm_client=llm_client, brain=brain),
+        Tank(llm_client=llm_client, brain=brain),
+        Niobe(llm_client=llm_client, brain=brain),
+        Mouse(llm_client=llm_client, brain=brain),
+        Smith(llm_client=llm_client, brain=brain),
+        Architect(llm_client=llm_client, brain=brain),
     ]
     for agent in agents:
         registry.register(agent)
@@ -46,7 +46,8 @@ def build_registry(llm_client: BedrockClient) -> AgentRegistry:
 
 
 async def handle_meta_command(
-    command: str, orchestrator: MatrixOrchestrator, adapter: SlackAdapter
+    command: str, orchestrator: MatrixOrchestrator, adapter: SlackAdapter,
+    brain=None,
 ) -> bool:
     if command in ("/quit", "/exit"):
         await adapter.post_message("Neo", "You are now leaving the Matrix.")
@@ -58,10 +59,58 @@ async def handle_meta_command(
             "  /status  - Show status of all agents\n"
             "  /agents  - List all agents with roles\n"
             "  /health  - Run health checks\n"
+            "  /capture <text>  - Save a thought to Matrix Brain\n"
+            "  /brain   - Show brain stats\n"
+            "  /brain search <query>  - Search the brain\n"
             "  /help    - Show this message\n"
             "  /quit    - Exit the Matrix"
         )
         await adapter.post_message("Neo", help_text)
+        return False
+
+    # /capture <text>
+    if command.startswith("/capture"):
+        text = command[8:].strip()
+        if not text:
+            await adapter.post_message("Neo", "Usage: /capture <your thought>")
+            return False
+        if brain:
+            from shared.brain_extractor import BrainExtractor
+            extractor = BrainExtractor(llm_client=BedrockClient())
+            thought_id = await extractor.capture_enriched(brain, text, source="console")
+            stats = await brain.stats()
+            await adapter.post_message(
+                "Neo", f"Captured to Matrix Brain (ID: {thought_id[:8]}...) "
+                       f"| Total: {stats['count']} thoughts"
+            )
+        else:
+            await adapter.post_message("Neo", "Brain not available.")
+        return False
+
+    # /brain or /brain search <query>
+    if command.startswith("/brain"):
+        if not brain:
+            await adapter.post_message("Neo", "Brain not available.")
+            return False
+        args = command[6:].strip()
+        if args.startswith("search "):
+            query = args[7:].strip()
+            results = await brain.search(query, n_results=5)
+            if results:
+                lines = []
+                for r in results:
+                    cat = r["metadata"].get("category", "?")
+                    lines.append(f"  [{cat}] {r['content'][:80]}")
+                await adapter.post_message("Neo", "Brain search results:\n" + "\n".join(lines))
+            else:
+                await adapter.post_message("Neo", "No results found.")
+        else:
+            stats = await brain.stats()
+            lines = [f"Thoughts: {stats['count']}"]
+            if stats["categories"]:
+                cats = ", ".join(f"{k}: {v}" for k, v in stats["categories"].items())
+                lines.append(f"Categories: {cats}")
+            await adapter.post_message("Neo", "Matrix Brain:\n" + "\n".join(lines))
         return False
 
     if command == "/agents":
@@ -111,7 +160,7 @@ async def process_task(
 
 
 async def console_loop(
-    orchestrator: MatrixOrchestrator, adapter: SlackAdapter
+    orchestrator: MatrixOrchestrator, adapter: SlackAdapter, brain=None
 ) -> None:
     console.print(MATRIX_BANNER, style="green")
     console.print("[bold green]Neo is online. Type a task or /help for commands.[/]")
@@ -130,9 +179,11 @@ async def console_loop(
         if not user_input:
             continue
 
-        if user_input.lower() in META_COMMANDS:
+        cmd_lower = user_input.lower()
+        is_command = cmd_lower in META_COMMANDS or cmd_lower.startswith("/capture") or cmd_lower.startswith("/brain")
+        if is_command:
             should_exit = await handle_meta_command(
-                user_input.lower(), orchestrator, adapter
+                cmd_lower, orchestrator, adapter, brain=brain
             )
             if should_exit:
                 break
@@ -145,17 +196,23 @@ async def console_loop(
 async def main() -> None:
     logger.info("Initializing Neo...")
 
+    from shared.brain import MatrixBrain
+    brain = MatrixBrain(mode=settings.brain_mode, data_path=settings.brain_data_path)
+    logger.info(f"Matrix Brain online ({settings.brain_mode} mode)")
+
     llm_client = BedrockClient()
-    registry = build_registry(llm_client)
+    registry = build_registry(llm_client, brain=brain)
     orchestrator = MatrixOrchestrator(registry=registry, llm_client=llm_client)
     adapter = SlackAdapter()
 
     if settings.slack_mode == "console":
-        await console_loop(orchestrator, adapter)
+        await console_loop(orchestrator, adapter, brain=brain)
     else:
         async def on_slack_message(text: str, thread_id: str | None) -> None:
-            if text.strip().lower() in META_COMMANDS:
-                await handle_meta_command(text.strip().lower(), orchestrator, adapter)
+            cmd = text.strip().lower()
+            is_command = cmd in META_COMMANDS or cmd.startswith("/capture") or cmd.startswith("/brain")
+            if is_command:
+                await handle_meta_command(cmd, orchestrator, adapter, brain=brain)
             else:
                 await process_task(text, orchestrator, adapter, thread_id)
 
