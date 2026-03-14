@@ -31,3 +31,4 @@ docker/volumes/
 # Node (just in case)
 node_modules/
 .DS_Store
+data/brain/
