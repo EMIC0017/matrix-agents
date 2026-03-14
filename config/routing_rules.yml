@@ -1,0 +1,29 @@
+# Merovingian's routing configuration
+keyword_routes:
+  code:
+    agent: morpheus
+    keywords: ["code", "implement", "debug", "fix bug", "refactor", "function", "class", "script"]
+  research:
+    agent: oracle
+    keywords: ["search", "find", "research", "look up", "what is", "explain", "document"]
+  data:
+    agent: mouse
+    keywords: ["data", "csv", "json", "clean", "transform", "parse", "scrape"]
+  api:
+    agent: keymaker
+    keywords: ["api", "endpoint", "webhook", "integrate", "connect", "authenticate"]
+  infra:
+    agent: tank
+    keywords: ["deploy", "docker", "container", "monitor", "logs", "health", "infrastructure"]
+  security:
+    agent: niobe
+    keywords: ["security", "vulnerability", "scan", "audit", "permission", "access"]
+  test:
+    agent: smith
+    keywords: ["test", "edge case", "break", "qa", "quality", "adversarial"]
+  design:
+    agent: architect
+    keywords: ["architect", "design", "schema", "plan", "system design", "diagram"]
+
+fallback_agent: trinity
+default_priority: 5
