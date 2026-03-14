@@ -216,7 +216,23 @@ async def main() -> None:
             else:
                 await process_task(text, orchestrator, adapter, thread_id)
 
+        async def on_slack_capture(text: str, user: str, thread_ts: str) -> None:
+            from shared.brain_extractor import BrainExtractor
+            extractor = BrainExtractor(llm_client=llm_client)
+            thought_id = await extractor.capture_enriched(brain, text, source=f"slack:{user}")
+            stats = await brain.stats()
+            results = await brain.search(text, n_results=1)
+            meta = results[0]["metadata"] if results else {}
+            cat = meta.get("category", "uncategorized")
+            summary = meta.get("summary", text[:50])
+            await adapter.post_message(
+                "Neo",
+                f"Captured as {cat} — {summary}\nTotal: {stats['count']} thoughts",
+                thread_id=thread_ts,
+            )
+
         adapter.on_message(on_slack_message)
+        adapter.on_capture(on_slack_capture)
         logger.info("Neo is online in Slack mode.")
         await adapter.start()
 

@@ -33,6 +33,8 @@ class SlackAdapter:
         self._console = Console()
         self._slack_app = None
         self._on_message: Callable | None = None
+        self._on_capture: Callable | None = None
+        self._capture_channel_id = settings.slack_capture_channel_id if settings.slack_capture_channel_id else None
 
         if self.mode == "slack":
             _bot_token = bot_token if bot_token is not None else settings.slack_bot_token
@@ -52,14 +54,29 @@ class SlackAdapter:
 
         @self._slack_app.event("message")
         async def handle_message(event, say):
-            if self._on_message and event.get("subtype") is None:
-                text = event.get("text", "")
+            if event.get("subtype") is not None:
+                return
+
+            channel = event.get("channel", "")
+            text = event.get("text", "")
+
+            # Capture channel -> brain ingestion
+            if self._capture_channel_id and channel == self._capture_channel_id and self._on_capture:
+                await self._on_capture(text, event.get("user", "unknown"), event.get("ts"))
+                return
+
+            # Normal message -> command/task handling
+            if self._on_message:
                 thread_ts = event.get("ts")
                 await self._on_message(text, thread_ts)
 
     def on_message(self, callback: Callable) -> None:
         """Register a callback for incoming messages."""
         self._on_message = callback
+
+    def on_capture(self, callback: Callable) -> None:
+        """Register callback for capture channel messages."""
+        self._on_capture = callback
 
     def format_agent_message(self, agent_name: str, content: str) -> str:
         """Format a message with agent identity."""
