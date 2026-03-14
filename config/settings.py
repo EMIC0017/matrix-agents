@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     chroma_host: str = "zion-chromadb"
     chroma_port: int = 8001
 
+    # Brain (shared memory)
+    brain_mode: str = "persistent"  # "ephemeral", "persistent", "docker"
+    brain_data_path: str = "data/brain"
+
+    # MCP Server
+    mcp_port: int = 8002
+    mcp_access_key: str = ""  # Empty = no auth (dev mode)
+
+    # Slack Capture
+    slack_capture_channel_id: str = ""
+
     # Orchestration
     orchestrator_type: str = "matrix"  # "matrix" or "cowork"
 
