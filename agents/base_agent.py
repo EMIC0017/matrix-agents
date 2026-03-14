@@ -18,12 +18,13 @@ if _PROMPTS_PATH.exists():
 class MatrixAgent(ABC):
     """Abstract base class for all Matrix agents."""
 
-    def __init__(self, name: str, role: str, llm_client: BedrockClient | None = None):
+    def __init__(self, name: str, role: str, llm_client: BedrockClient | None = None, brain=None):
         self.name = name
         self.role = role
         self.status = "IDLE"
         self._logger = get_agent_logger(name)
         self._llm_client = llm_client
+        self.brain = brain
 
         # Load system prompt from config
         agent_key = name.lower()
