@@ -1,0 +1,40 @@
+neo:
+  display_name: "Neo"
+  emoji: ":sunglasses:"
+  color: "bold white"
+trinity:
+  display_name: "Trinity"
+  emoji: ":blue_circle:"
+  color: "cyan"
+morpheus:
+  display_name: "Morpheus"
+  emoji: ":green_circle:"
+  color: "green"
+oracle:
+  display_name: "The Oracle"
+  emoji: ":crystal_ball:"
+  color: "yellow"
+keymaker:
+  display_name: "Keymaker"
+  emoji: ":key:"
+  color: "magenta"
+tank:
+  display_name: "Tank"
+  emoji: ":wrench:"
+  color: "blue"
+niobe:
+  display_name: "Niobe"
+  emoji: ":shield:"
+  color: "bright_red"
+mouse:
+  display_name: "Mouse"
+  emoji: ":mouse:"
+  color: "bright_green"
+smith:
+  display_name: "Agent Smith"
+  emoji: ":red_circle:"
+  color: "red"
+architect:
+  display_name: "The Architect"
+  emoji: ":building_construction:"
+  color: "bright_cyan"
