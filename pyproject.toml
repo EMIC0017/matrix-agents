@@ -1,0 +1,10 @@
+[project]
+name = "matrix-agents"
+version = "0.1.0"
+description = "A multi-agent AI system themed after The Matrix"
+requires-python = ">=3.12"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

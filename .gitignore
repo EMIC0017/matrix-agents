@@ -1,0 +1,32 @@
+# Environment
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Logs
+logs/*.log
+
+# Data
+data/raw/*
+data/processed/*
+data/vector_store/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/vector_store/.gitkeep
+
+# Docker volumes
+docker/volumes/
+
+# IDE
+.vscode/
+.idea/
+
+# Node (just in case)
+node_modules/
