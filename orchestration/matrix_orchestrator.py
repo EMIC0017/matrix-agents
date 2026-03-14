@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import traceback
 from pathlib import Path
 
@@ -64,7 +65,12 @@ class MatrixOrchestrator:
                     system_prompt=_MEROVINGIAN_PROMPT,
                     messages=[{"role": "user", "content": content}],
                 )
-                parsed = json.loads(response)
+                # Extract JSON from response — handle LLM wrapping it in text
+                json_str = response.strip()
+                json_match = re.search(r"\{.*\}", json_str, re.DOTALL)
+                if json_match:
+                    json_str = json_match.group()
+                parsed = json.loads(json_str)
                 agents = [a.capitalize() for a in parsed.get("agents", [])]
                 if agents:
                     return RoutingDecision(

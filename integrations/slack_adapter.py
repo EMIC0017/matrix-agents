@@ -35,8 +35,8 @@ class SlackAdapter:
         self._on_message: Callable | None = None
 
         if self.mode == "slack":
-            _bot_token = bot_token or settings.slack_bot_token
-            _channel_id = channel_id or settings.slack_channel_id
+            _bot_token = bot_token if bot_token is not None else settings.slack_bot_token
+            _channel_id = channel_id if channel_id is not None else settings.slack_channel_id
             if not _bot_token:
                 raise ValueError("SLACK_BOT_TOKEN is required for Slack mode")
             if not _channel_id:
