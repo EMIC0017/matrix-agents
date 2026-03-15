@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "matrix-brain": {
+      "type": "stdio",
+      "command": "/Users/ericmorin/matrix-agents/.venv/bin/python3",
+      "args": [
+        "-m",
+        "mcp_server.brain_server"
+      ],
+      "cwd": "/Users/ericmorin/matrix-agents",
+      "env": {}
+    }
+  }
+}
